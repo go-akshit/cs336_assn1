@@ -8,7 +8,7 @@ import numpy.typing as npt
 import torch
 
 import sys
-sys.path.insert(0, '/home/c-akshit/spring2024-assignment1-basics/cs336_basics')
+sys.path.insert(0, '/home/c-akshit/akshit_repo/cs336_assn1/cs336_basics')
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer
 
 def run_positionwise_feedforward(

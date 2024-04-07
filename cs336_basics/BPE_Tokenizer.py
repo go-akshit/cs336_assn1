@@ -59,7 +59,7 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
         #Update the byte pairs by removing the contribution from tokens containing merged byte pair 
         new_token_freq_list = []
         byte_pairs_tokens_entry = byte_pairs_tokens[merged_byte_pair].copy()
-        for token, freq in set(byte_pairs_tokens_entry):
+        for token, freq in byte_pairs_tokens_entry:
             # if(token == (b' ', b'w', b'h', b'e', b't', b'h', b'e', b'r')):
             #     import pdb; pdb.set_trace()
             
@@ -128,7 +128,8 @@ def add_byte_pairs(byte_pairs_freq: Dict[bytes, int], byte_pairs_tokens: Dict[by
             byte_pairs_freq[byte_pair] = freq
 
         if byte_pair in byte_pairs_tokens:
-            byte_pairs_tokens[byte_pair].append((token, freq))
+            if (token, freq) not in byte_pairs_tokens[byte_pair]:
+                byte_pairs_tokens[byte_pair].append((token, freq))
         else:
             byte_pairs_tokens[byte_pair] = [(token, freq)]
         #compare_freq(byte_pairs_freq, byte_pairs_tokens, byte_pair)
