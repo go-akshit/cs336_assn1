@@ -7,6 +7,9 @@ from typing import IO, BinaryIO, Iterable, Optional, Type
 import numpy.typing as npt
 import torch
 
+import sys
+sys.path.insert(0, '/home/c-akshit/spring2024-assignment1-basics/cs336_basics')
+from BPE_Tokenizer import bpe_train, BPE_Tokenizer
 
 def run_positionwise_feedforward(
     d_model: int,
@@ -569,4 +572,6 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    raise NotImplementedError
+    BPE_Tokenizer_inst =  bpe_train(input_path, vocab_size, special_tokens)
+    return (BPE_Tokenizer_inst.vocab, BPE_Tokenizer_inst.merges)
+    
