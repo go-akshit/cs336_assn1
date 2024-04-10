@@ -84,6 +84,7 @@ def test_roundtrip_empty():
         vocab_path=VOCAB_PATH,
         merges_path=MERGES_PATH,
     )
+    
     test_string = ""
     encoded_ids = tokenizer.encode(test_string)
     decoded_string = tokenizer.decode(encoded_ids)
@@ -114,6 +115,7 @@ def test_roundtrip_single_character():
         vocab_path=VOCAB_PATH,
         merges_path=MERGES_PATH,
     )
+    
     test_string = "s"
     encoded_ids = tokenizer.encode(test_string)
     decoded_string = tokenizer.decode(encoded_ids)
@@ -144,7 +146,9 @@ def test_roundtrip_single_unicode_character():
         vocab_path=VOCAB_PATH,
         merges_path=MERGES_PATH,
     )
+    
     test_string = "🙃"
+    
     encoded_ids = tokenizer.encode(test_string)
     decoded_string = tokenizer.decode(encoded_ids)
     assert test_string == decoded_string
@@ -157,7 +161,7 @@ def test_single_unicode_character_matches_tiktoken():
         merges_path=MERGES_PATH,
     )
     test_string = "🙃"
-
+    
     reference_ids = reference_tokenizer.encode(test_string)
     ids = tokenizer.encode(test_string)
     assert ids == reference_ids
@@ -171,6 +175,7 @@ def test_roundtrip_ascii_string():
         vocab_path=VOCAB_PATH,
         merges_path=MERGES_PATH,
     )
+    
     test_string = "Hello, how are you?"
     encoded_ids = tokenizer.encode(test_string)
     decoded_string = tokenizer.decode(encoded_ids)
@@ -225,6 +230,7 @@ def test_roundtrip_unicode_string_with_special_tokens():
     tokenizer = get_tokenizer_from_vocab_merges_path(
         vocab_path=VOCAB_PATH, merges_path=MERGES_PATH, special_tokens=["<|endoftext|>"]
     )
+    #import pdb; pdb.set_trace()
     test_string = "Héllò hôw <|endoftext|><|endoftext|> are ü? 🙃<|endoftext|>"
     encoded_ids = tokenizer.encode(test_string)
     tokenized_string = [tokenizer.decode([x]) for x in encoded_ids]

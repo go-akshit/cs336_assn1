@@ -8,8 +8,8 @@ import numpy.typing as npt
 import torch
 
 import sys
-sys.path.insert(0, '/home/c-akshit/akshit_repo/cs336_assn1/cs336_basics')
-from BPE_Tokenizer import bpe_train, BPE_Tokenizer
+sys.path.insert(0, '../cs336_assn1/cs336_basics')
+from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
 
 def run_positionwise_feedforward(
     d_model: int,
@@ -539,7 +539,7 @@ def get_tokenizer(
     Returns:
         A BPE tokenizer that uses the provided vocab, merges, and special tokens.
     """
-    raise NotImplementedError
+    return Tokenizer(vocab, merges, special_tokens)
 
 
 def run_train_bpe(

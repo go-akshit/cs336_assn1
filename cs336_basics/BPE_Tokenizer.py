@@ -1,6 +1,9 @@
 import regex as re
 from dataclasses import dataclass
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Iterable, Iterator
+import sys
+sys.path.insert(0, '../cs336_assn1/tests')
+from common import gpt2_bytes_to_unicode
 
 @dataclass
 class BPE_Tokenizer:
@@ -113,7 +116,15 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
         
     return BPE_Tokenizer(vocab, merges)
 
-
+def save_bpe_tokenizer(bpe_tokenizer: BPE_Tokenizer, vocab_output_path: str, merges_output_path: str):
+    dict = gpt2_bytes_to_unicode()
+    vocab = bpe_tokenizer.vocab
+    merges = bpe_tokenizer.merges
+    with open(vocab_output_path , 'w') as file:
+        for key, value in vocab.items():
+            value_str = dict[value[0]]
+            file.write(f'{key} {value_str}\n')
+    #with open(merges_output_path, 'w') as file:
         
 
 
@@ -178,4 +189,125 @@ def compare_freq(byte_pairs_freq: Dict[bytes, int], byte_pairs_tokens: Dict[byte
         #return False
     #import pdb; pdb.set_trace()
     return True
+
+
+class Tokenizer: 
+    def __init__(self, vocab, merges, special_tokens = None):
+        self.vocab = vocab
+        self.merges = merges
+        self.special_tokens = special_tokens
+        if special_tokens is not None:
+            self.special_tokens = sorted(special_tokens, key=len, reverse=True)
+    
+    #def from_files(cls, vocab_filepath, merges_filepath, special_tokens = None):
+
+    def encode_main(self, text: str) -> List[int]:
+        encoded_token_ints = []
+
+        #Pre-Tokenize the input text
+        if self.special_tokens is not None:
+            if text in self.special_tokens:
+                tokens = [text]
+                encoded = []
+                for each in tokens:
+                    byte_encoding = each.encode('utf-8')
+                    for key, value in self.vocab.items():
+                        if byte_encoding == value:
+                            encoded.append(key)
+                assert len(encoded) == 1
+                encoded_token_ints.extend(encoded)
+                return encoded_token_ints
+
+        PAT_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+        tokens = re.findall(PAT_regex, text)
         
+
+        for item in tokens:
+            token = []
+            for ch in item:
+                byte_encoding = ch.encode('utf-8')
+                for byte in byte_encoding:
+                    token.append(bytes([byte]))
+      
+            #For each byte pair in the token, find the byte pair with the smallest index in the merges list for merging
+            while True:
+                min_pos = len(self.merges)
+                merged_byte_pair = None
+                token_shifted = token[1:]
+                for byte_pair in zip(token, token_shifted):
+                    try:
+                        pos = self.merges.index(byte_pair)
+                    except: 
+                        pos = -1
+
+                    if pos >= 0:
+                        if pos <= min_pos:
+                            min_pos = pos
+                            merged_byte_pair = byte_pair
+
+                if merged_byte_pair is None:
+                    break
+                else:
+                    #Create a new token with merged byte pair
+                    token_list = list(token)
+                    len_token = len(token_list)
+                    new_token = []
+                    new_token_len = 0
+                    k = 0
+                    while k < (len_token - 1):
+                        if token_list[k] == merged_byte_pair[0] and token_list[k+1] == merged_byte_pair[1]:
+                            # token_str = merged_byte_pair[0].decode('utf-8') + merged_byte_pair[1].decode('utf-8')
+                            # new_token.append(token_str.encode('utf-8'))
+                            temp = []
+                            temp.extend(list(merged_byte_pair[0]))
+                            temp.extend(list(merged_byte_pair[1]))
+                            # merged = bytes([list(merged_byte_pair[0])[0], list(merged_byte_pair[1])[0]])
+                            merged = bytes(temp)
+                            new_token.append(merged)
+                            k += 2
+                            new_token_len += 2
+                        else:
+                            new_token.append(token_list[k])
+                            k +=1
+                            new_token_len += 1
+                    if (k == len_token - 1):
+                        if(new_token_len != len_token):
+                            new_token.append(token_list[k])
+                    token = new_token
+            
+            #Encode the token
+            encoded = []
+            for each in token:
+                for key, value in self.vocab.items():
+                    if each == value:
+                        encoded.append(key)
+            assert len(encoded) == len(token)
+            encoded_token_ints.extend(encoded)
+        
+        return encoded_token_ints
+    
+    def encode(self, text: str) -> List[int]:
+        split_regex = [text]
+        
+        if self.special_tokens is not None:
+            if len(self.special_tokens) != 0:
+                escaped_special_tokens = [re.escape(token) for token in self.special_tokens]
+                pattern = '|'.join(escaped_special_tokens)
+                pattern += '|\n'
+                split_regex = re.findall(pattern + '|.+?(?=' + pattern + '|$)', text)
+            else:
+                split_regex = [text]
+        encoded_token_ints = []
+        for item in split_regex:
+            encoded_token_ints.extend(self.encode_main(item))
+        return encoded_token_ints
+
+    def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
+        for text in iterable:
+            for token_id in self.encode(text):
+                yield token_id
+
+    def decode(self, ids: list[int]) -> str:
+        byte_string = b"".join([self.vocab.get(id, b'\xef\xbf\xbd') for id in ids])
+        text = byte_string.decode('utf-8', errors='replace')
+        return text
