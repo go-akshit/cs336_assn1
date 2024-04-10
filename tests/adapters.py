@@ -10,6 +10,9 @@ import torch
 import sys
 sys.path.insert(0, '../cs336_assn1/cs336_basics')
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
+from RMS_Normalization import rms_norm
+from GELU import gelu
+from FFN import poswise_ffn
 
 def run_positionwise_feedforward(
     d_model: int,
@@ -46,7 +49,8 @@ def run_positionwise_feedforward(
     # You can also manually assign the weights
     # my_ffn.w1.weight.data = weights["w1.weight"]
     # my_ffn.w2.weight.data = weights["w2.weight"]
-    raise NotImplementedError
+    ffn_layer = poswise_ffn(weights["w1.weight"], weights["w2.weight"])
+    return ffn_layer(in_features)
 
 
 def run_scaled_dot_product_attention(
@@ -334,8 +338,9 @@ def run_rmsnorm(
         FloatTensor of with the same shape as `in_features` with the output of running
         layernorm of the `in_features`.
     """
-    raise NotImplementedError
-
+    rms_norm_layer = rms_norm(input_size = d_model, weights = weights['weight'], epsilon = eps )
+    
+    return rms_norm_layer(in_features)
 
 def run_gelu(in_features: torch.FloatTensor) -> torch.FloatTensor:
     """Given a tensor of inputs, return the output of applying GELU
@@ -349,7 +354,8 @@ def run_gelu(in_features: torch.FloatTensor) -> torch.FloatTensor:
         FloatTensor of with the same shape as `in_features` with the output of applying
         GELU to each element.
     """
-    raise NotImplementedError
+    gelu_layer = gelu()
+    return gelu_layer(in_features)
 
 
 def run_get_batch(
