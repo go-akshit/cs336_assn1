@@ -49,7 +49,10 @@ def run_positionwise_feedforward(
     # You can also manually assign the weights
     # my_ffn.w1.weight.data = weights["w1.weight"]
     # my_ffn.w2.weight.data = weights["w2.weight"]
-    ffn_layer = poswise_ffn(weights["w1.weight"], weights["w2.weight"])
+    import pdb; pdb.set_trace()
+    ffn_layer = poswise_ffn(d_model, d_ff)
+    ffn_layer.linear1.weight.data = weights["w1.weight"]
+    ffn_layer.linear2.weight.data = weights["w2.weight"]
     return ffn_layer(in_features)
 
 
