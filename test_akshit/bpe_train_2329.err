@@ -1,0 +1,1 @@
+/var/lib/slurm/slurmctld/job02329/slurm_script: line 9: 1201596 Killed                  python3 train_bpe_datasets.py
