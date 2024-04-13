@@ -634,7 +634,7 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    #input_path = '/data/TinyStoriesV2-GPT4-train.txt'
+    input_path = '/data/TinyStoriesV2-GPT4-train.txt'
     BPE_Tokenizer_inst =  bpe_train(input_path, vocab_size, special_tokens)
     return (BPE_Tokenizer_inst.vocab, BPE_Tokenizer_inst.merges)
     
