@@ -10,10 +10,13 @@ import torch
 import sys
 sys.path.insert(0, '../cs336_assn1/cs336_basics')
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
-from RMS_Normalization import rms_norm
-from GELU import gelu
+from Others import (gelu, softmax, rms_norm, cross_entropy, 
+                    learning_rate_schedule, gradient_clipping, 
+                    data_loading, save_checkpoint, load_checkpoint)
 from FFN import poswise_ffn
-
+from Attention import scaled_attention, multi_head_attention
+from Transformer import transformer_block, transformer_lm
+from Adam import adam
 def run_positionwise_feedforward(
     d_model: int,
     d_ff: int,
@@ -49,7 +52,7 @@ def run_positionwise_feedforward(
     # You can also manually assign the weights
     # my_ffn.w1.weight.data = weights["w1.weight"]
     # my_ffn.w2.weight.data = weights["w2.weight"]
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     ffn_layer = poswise_ffn(d_model, d_ff)
     ffn_layer.linear1.weight.data = weights["w1.weight"]
     ffn_layer.linear2.weight.data = weights["w2.weight"]
@@ -95,7 +98,7 @@ def run_scaled_dot_product_attention(
         with the output of running your scaled dot product attention
         implementation with the provided key, query, and value tensors.
     """
-    raise NotImplementedError
+    return scaled_attention(Q, K, V, mask, pdrop)
 
 
 def run_multihead_self_attention(
@@ -145,7 +148,28 @@ def run_multihead_self_attention(
         torch.FloatTensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    #import pdb; pdb.set_trace()
+    attention_layer = multi_head_attention(d_model, num_heads, attn_pdrop)
+    
+    q_weights = weights['q_heads.0.weight']
+    k_weights = weights['k_heads.0.weight']
+    v_weights = weights['v_heads.0.weight']
+    for i in range(1, num_heads):
+        key_q = 'q_heads.' + str(i) + '.weight'
+        key_k = 'k_heads.' + str(i) + '.weight'
+        key_v = 'v_heads.' + str(i) + '.weight'
+        q_weights = torch.concat((q_weights, weights[key_q]), dim = 0)
+        k_weights = torch.concat((k_weights, weights[key_k]), dim = 0)
+        v_weights = torch.concat((v_weights, weights[key_v]), dim = 0)
+
+    attention_layer.q_proj.weight.data = q_weights
+    attention_layer.k_proj.weight.data = k_weights
+    attention_layer.v_proj.weight.data = v_weights
+    attention_layer.output_linear.weight.data = weights['output_proj.weight']
+    
+
+
+    return attention_layer(in_features)
 
 
 def run_transformer_block(
@@ -217,7 +241,20 @@ def run_transformer_block(
         FloatTensor of shape (batch_size, sequence_length, d_model) with the output of
         running the Transformer block on the input features.
     """
-    raise NotImplementedError
+    #import pdb; pdb.set_trace()
+    block = transformer_block(d_model, num_heads, d_ff, attn_pdrop, residual_pdrop)
+    block.mha.q_proj.weight.data = weights['attn.q_proj.weight']
+    block.mha.k_proj.weight.data = weights['attn.k_proj.weight']
+    block.mha.v_proj.weight.data = weights['attn.v_proj.weight']
+    block.mha.output_linear.weight.data = weights['attn.output_proj.weight']
+
+    block.rms_norm1.gains.data = weights['ln1.weight']
+    block.rms_norm2.gains.data = weights['ln2.weight']
+
+    block.ffn.linear1.weight.data = weights['ffn.w1.weight']
+    block.ffn.linear2.weight.data = weights['ffn.w2.weight']
+
+    return block(in_features)
 
 
 def run_transformer_lm(
@@ -310,8 +347,23 @@ def run_transformer_lm(
         FloatTensor of shape (batch size, sequence_length, vocab_size) with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    # import pdb; pdb.set_trace()
+    lm = transformer_lm(vocab_size, context_length, num_layers, d_model, num_heads, d_ff, attn_pdrop, residual_pdrop)
+    lm.token_embed.weight.data = weights['token_embeddings.weight']
+    lm.pos_embed.weight.data = weights['position_embeddings.weight']
+    for i, _ in enumerate(lm.layers):
+        lm.layers[i].mha.q_proj.weight.data = weights[f'layers.{i}.attn.q_proj.weight']
+        lm.layers[i].mha.k_proj.weight.data = weights[f'layers.{i}.attn.k_proj.weight']
+        lm.layers[i].mha.v_proj.weight.data = weights[f'layers.{i}.attn.v_proj.weight']
+        lm.layers[i].mha.output_linear.weight.data = weights[f'layers.{i}.attn.output_proj.weight']
+        lm.layers[i].rms_norm1.gains.data = weights[f'layers.{i}.ln1.weight']
+        lm.layers[i].rms_norm2.gains.data = weights[f'layers.{i}.ln2.weight']
+        lm.layers[i].ffn.linear1.weight.data = weights[f'layers.{i}.ffn.w1.weight']
+        lm.layers[i].ffn.linear2.weight.data = weights[f'layers.{i}.ffn.w2.weight']
+    lm.norm_final.gains.data = weights['ln_final.weight']
+    lm.head.weight.data = weights['lm_head.weight']
 
+    return lm(in_indices)
 
 def run_rmsnorm(
     d_model: int,
@@ -341,7 +393,8 @@ def run_rmsnorm(
         FloatTensor of with the same shape as `in_features` with the output of running
         layernorm of the `in_features`.
     """
-    rms_norm_layer = rms_norm(input_size = d_model, weights = weights['weight'], epsilon = eps )
+    rms_norm_layer = rms_norm(input_size = d_model, epsilon = eps )
+    rms_norm_layer.gains.data = weights['weight']
     
     return rms_norm_layer(in_features)
 
@@ -385,7 +438,7 @@ def run_get_batch(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
-    raise NotImplementedError
+    return data_loading(dataset, batch_size, context_length, device)
 
 
 def run_softmax(in_features: torch.FloatTensor, dim: int) -> torch.FloatTensor:
@@ -402,7 +455,7 @@ def run_softmax(in_features: torch.FloatTensor, dim: int) -> torch.FloatTensor:
         FloatTensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    return softmax(in_features, dim)
 
 
 def run_cross_entropy(inputs: torch.FloatTensor, targets: torch.LongTensor):
@@ -420,7 +473,7 @@ def run_cross_entropy(inputs: torch.FloatTensor, targets: torch.LongTensor):
     Returns:
         Tensor of shape () with the average cross-entropy loss across examples.
     """
-    raise NotImplementedError
+    return cross_entropy(inputs, targets)
 
 
 def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float):
@@ -435,14 +488,14 @@ def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm:
     Returns:
         None
     """
-    raise NotImplementedError
+    gradient_clipping(parameters, max_l2_norm)
 
 
 def get_adamw_cls() -> Type[torch.optim.Optimizer]:
     """
     Returns a torch.optim.Optimizer that implements AdamW.
     """
-    raise NotImplementedError
+    return adam
 
 
 def run_get_lr_cosine_schedule(
@@ -475,7 +528,7 @@ def run_get_lr_cosine_schedule(
     Returns:
         Learning rate at the given iteration under the specified schedule.
     """
-    raise NotImplementedError
+    return learning_rate_schedule(t=it, alpha_max=max_learning_rate, alpha_min= min_learning_rate, t_w=warmup_iters, t_c=cosine_cycle_iters)
 
 
 def run_save_checkpoint(
@@ -498,7 +551,7 @@ def run_save_checkpoint(
         out: str | os.PathLike | BinaryIO | IO[bytes]
             Path or file-like object to serialize the model, optimizer, and iteration to.
     """
-    raise NotImplementedError
+    save_checkpoint(model, optimizer, iteration, out)
 
 
 def run_load_checkpoint(
@@ -522,7 +575,7 @@ def run_load_checkpoint(
     Returns:
         int, the previously-serialized number of iterations.
     """
-    raise NotImplementedError
+    return load_checkpoint(src, model, optimizer)
 
 
 def get_tokenizer(

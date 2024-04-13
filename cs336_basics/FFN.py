@@ -3,7 +3,7 @@ import torch.nn as nn
 
 import sys
 sys.path.insert(0, '../cs336_assn1/cs336_basics')
-from GELU import gelu
+from Others import gelu
 
 class poswise_ffn(nn.Module):
     def __init__(self, d_model, dff):
@@ -15,7 +15,7 @@ class poswise_ffn(nn.Module):
         self.linear2 = nn.Linear(in_features = self.dff, out_features = self.d_model, bias = False)
     
     def forward(self, x):
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         linear1 = self.linear1(x)
         gelu = self.gelu(linear1)
         linear2 = self.linear2(gelu)
