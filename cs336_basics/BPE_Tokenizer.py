@@ -15,11 +15,17 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
     #Load the input file
     PAT_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     text = ""
+    tokens = []
     with open(input_path, 'r') as file:
-        text = file.read()
+        text = file.readline()
+        while text:
+            # Get rid of special tokens as I add them later anyway
+            for token in special_tokens:
+                text = text.replace(token, "")
 
-    #Pre-Tokenize the input file
-    tokens = re.findall(PAT_regex, text)
+            #Pre-Tokenize the input file
+            tokens.extend(re.findall(PAT_regex, text))
+            text = file.readline()
 
     #Create the initial vocabulary
     vocab = {x: bytes([x]) for x in range(256)}
@@ -113,8 +119,13 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
 
         for token, freq in new_token_freq_list:
             add_byte_pairs(byte_pairs_freq, byte_pairs_tokens, token, freq)
-        
-    return BPE_Tokenizer(vocab, merges)
+
+    resulting_tokenizer = BPE_Tokenizer(vocab, merges)
+    #import pdb; pdb.set_trace()
+    vocab_file_name = str(input_path).split("/")[-1] + "_my_vocab.json" 
+    merge_file_name = str(input_path).split("/")[-1] + "_my_merges.txt" 
+    save_bpe_tokenizer(resulting_tokenizer, vocab_file_name, merge_file_name)
+    return resulting_tokenizer
 
 def save_bpe_tokenizer(bpe_tokenizer: BPE_Tokenizer, vocab_output_path: str, merges_output_path: str):
     dict = gpt2_bytes_to_unicode()
@@ -122,9 +133,12 @@ def save_bpe_tokenizer(bpe_tokenizer: BPE_Tokenizer, vocab_output_path: str, mer
     merges = bpe_tokenizer.merges
     with open(vocab_output_path , 'w') as file:
         for key, value in vocab.items():
-            value_str = dict[value[0]]
+            value_str = ''.join(dict[byte] for byte in value)
             file.write(f'{key} {value_str}\n')
-    #with open(merges_output_path, 'w') as file:
+    with open(merges_output_path, 'w') as file:
+        for each in merges:
+            file.write(f'{each}\n')
+
         
 
 
