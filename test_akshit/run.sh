@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=bpe_tiny
-#SBATCH --partition=batch
+#SBATCH --job-name=bpe_owt
+#SBATCH --partition=batch-cpu
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=00:60:00
-#SBATCH --output=bpe_tiny_%j.out
-#SBATCH --error=bpe_tiny_%j.err
-#SBATCH --mem=50G
+#SBATCH --time=24:00:00
+#SBATCH --output=bpe_owt_%j.out
+#SBATCH --error=bpe_owt_%j.err
+#SBATCH --mem=100G
 python3 train_bpe_datasets.py
