@@ -8,7 +8,7 @@ from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
 
 input_path = '/data/owt_train.txt'
 vocab_size = 32000
-special_tokens=[]
+special_tokens=["<|endoftext|>"]
 
 bpe_train(input_path, vocab_size, special_tokens)
 with open('Section_2.5_bpe_owt_done', 'w') as out:

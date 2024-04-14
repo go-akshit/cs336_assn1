@@ -342,6 +342,7 @@ def test_tinystories_sample_roundtrip():
         corpus_contents = f.read()
 
     ids = tokenizer.encode(corpus_contents)
+    
     assert tokenizer.decode(ids) == corpus_contents
 
 
