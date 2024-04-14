@@ -8,5 +8,5 @@
 #SBATCH --error=encode_iterable_memory_usage_%j.err
 #SBATCH --mem=50G
 #python3 train_bpe_datasets.py
-../pytest -k test_encode_iterable_memory_usage
+pytest -k test_encode_iterable_memory_usage
 python3 train_bpe_datasets.py
