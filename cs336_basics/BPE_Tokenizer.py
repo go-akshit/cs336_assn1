@@ -2,7 +2,7 @@ import regex as re
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Iterable, Iterator
 import sys
-sys.path.insert(0, '../../cs336_assn1/tests')
+sys.path.insert(0, '../cs336_assn1/tests')
 from common import gpt2_bytes_to_unicode
 
 @dataclass
