@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=00:60:00
 #SBATCH --output=encode_iterable_memory_usage_%j.out
-#SBATCH --error=enoce_iterable_memory_usage_%j.err
+#SBATCH --error=encode_iterable_memory_usage_%j.err
 #SBATCH --mem=50G
 #python3 train_bpe_datasets.py
 pytest -k test_encode_iterable_memory_usage
