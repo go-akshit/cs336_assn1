@@ -15,17 +15,18 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
     #Load the input file
     PAT_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     text = ""
-    tokens = []
-    with open(input_path, 'r') as file:
-        text = file.readline()
-        while text:
-            # Get rid of special tokens as I add them later anyway
-            for token in special_tokens:
-                text = text.replace(token, "")
+    # tokens = []
+    # with open(input_path, 'r') as file:
+    #     text = file.readline()
+    #     while text:
+    #         # Get rid of special tokens as I add them later anyway
+    #         for token in special_tokens:
+    #             text = text.replace(token, "")
 
-            #Pre-Tokenize the input file
-            tokens.extend(re.findall(PAT_regex, text))
-            text = file.readline()
+    #         #Pre-Tokenize the input file
+    #         tokens.extend(re.findall(PAT_regex, text))
+    #         text = file.readline()
+
 
     #Create the initial vocabulary
     vocab = {x: bytes([x]) for x in range(256)}
@@ -37,14 +38,32 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
     #num_merge_tokens = 3
 
     #Frequency of each token
+    # token_freq = {}
+    # for token in tokens:
+    #     token = [ch.encode('utf-8') for ch in token]
+    #     token = tuple(token)
+    #     if token in token_freq:
+    #         token_freq[token] += 1
+    #     else:
+    #         token_freq[token] = 1
+
+    with open(input_path, 'r') as file:
+        text = file.read()
+        # Get rid of special tokens as I add them later anyway
+    for token in special_tokens:
+        text = text.replace(token, "")
+
+    #Pre-Tokenize the input file and create the initial token frequency
     token_freq = {}
-    for token in tokens:
+    for match in re.finditer(PAT_regex, text):
+        token = match.group(0)
         token = [ch.encode('utf-8') for ch in token]
         token = tuple(token)
         if token in token_freq:
             token_freq[token] += 1
         else:
             token_freq[token] = 1
+
     
     #Create the byte pairs
     byte_pairs_freq = {}
