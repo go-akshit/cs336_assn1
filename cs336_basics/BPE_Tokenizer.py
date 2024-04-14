@@ -1,8 +1,10 @@
 import regex as re
+import gc
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Iterable, Iterator
 import sys
-sys.path.insert(0, '../../cs336_assn1/tests')
+import ast
+sys.path.insert(0, '../cs336_assn1/tests')
 from common import gpt2_bytes_to_unicode
 
 @dataclass
@@ -64,7 +66,8 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
         else:
             token_freq[token] = 1
 
-    
+    del text
+    gc.collect()
     #Create the byte pairs
     byte_pairs_freq = {}
     byte_pairs_tokens = {}
@@ -232,7 +235,26 @@ class Tokenizer:
         if special_tokens is not None:
             self.special_tokens = sorted(special_tokens, key=len, reverse=True)
     
-    #def from_files(cls, vocab_filepath, merges_filepath, special_tokens = None):
+    @classmethod
+    def from_files(cls, vocab_filepath, merges_filepath, special_tokens = None):
+        vocab = {}
+        merges = []
+        with open(vocab_filepath, 'r') as file:
+            line = file.readline()
+            while line:
+                #import pdb; pdb.set_trace()
+                line_split = line.split(' ', 1)
+                vocab[ast.literal_eval(line_split[0])] = ast.literal_eval(line_split[1])
+                line = file.readline()
+        
+        with open(merges_filepath, 'r') as f:
+            line = f.readline()
+            while line:
+                evaluated_tuple = ast.literal_eval(line)
+                merges.append(evaluated_tuple)
+                line = f.readline()
+        return cls(vocab, merges, special_tokens)
+
 
     def encode_main(self, text: str) -> List[int]:
         encoded_token_ints = []
@@ -252,10 +274,12 @@ class Tokenizer:
                 return encoded_token_ints
 
         PAT_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
-        tokens = re.findall(PAT_regex, text)
+        #tokens = re.findall(PAT_regex, text)
         
 
-        for item in tokens:
+        #for item in tokens:
+        for match in re.finditer(PAT_regex, text):
+            item = match.group(0)
             token = []
             for ch in item:
                 byte_encoding = ch.encode('utf-8')
