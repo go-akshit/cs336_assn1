@@ -2,7 +2,7 @@ import regex as re
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Iterable, Iterator
 import sys
-sys.path.insert(0, '../cs336_assn1/tests')
+sys.path.insert(0, '../../cs336_assn1/tests')
 from common import gpt2_bytes_to_unicode
 
 @dataclass
@@ -128,13 +128,13 @@ def bpe_train(input_path: str, vocab_size: int, special_tokens: list[str]) -> BP
     return resulting_tokenizer
 
 def save_bpe_tokenizer(bpe_tokenizer: BPE_Tokenizer, vocab_output_path: str, merges_output_path: str):
-    dict = gpt2_bytes_to_unicode()
+    #dict = gpt2_bytes_to_unicode()
     vocab = bpe_tokenizer.vocab
     merges = bpe_tokenizer.merges
     with open(vocab_output_path , 'w') as file:
         for key, value in vocab.items():
-            value_str = ''.join(dict[byte] for byte in value)
-            file.write(f'{key} {value_str}\n')
+            #value_str = ''.join(dict[byte] for byte in value)
+            file.write(f'{key} {value}\n')
     with open(merges_output_path, 'w') as file:
         for each in merges:
             file.write(f'{each}\n')

@@ -8,7 +8,7 @@ import numpy.typing as npt
 import torch
 
 import sys
-sys.path.insert(0, '../cs336_assn1/cs336_basics')
+sys.path.insert(0, '../../cs336_assn1/cs336_basics')
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
 from Others import (gelu, softmax, rms_norm, cross_entropy, 
                     learning_rate_schedule, gradient_clipping, 
