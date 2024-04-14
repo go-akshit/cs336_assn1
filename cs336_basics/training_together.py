@@ -5,8 +5,8 @@ import argparse
 import os
 
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
-from Others import data_loading, load_checkpoint, save_checkpoint
-from Transformer import transformer_lm, cross_entropy
+from Others import data_loading, load_checkpoint, save_checkpoint,, cross_entropy
+from Transformer import transformer_lm
 from Adam import adam
 
 class trainer():
