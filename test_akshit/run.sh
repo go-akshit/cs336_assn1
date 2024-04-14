@@ -1,10 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=bpe_train_tiny
+#SBATCH --job-name=encode_iterable_memory_usage
 #SBATCH --partition=batch
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=00:60:00
-#SBATCH --output=bpe_train_tiny_%j.out
-#SBATCH --error=bpe_train_tiny_%j.err
+#SBATCH --output=encode_iterable_memory_usage_%j.out
+#SBATCH --error=enoce_iterable_memory_usage_%j.err
 #SBATCH --mem=50G
-python3 train_bpe_datasets.py
+#python3 train_bpe_datasets.py
+pytest -k test_encode_iterable_memory_usage
