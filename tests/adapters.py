@@ -8,7 +8,7 @@ import numpy.typing as npt
 import torch
 
 import sys
-sys.path.insert(0, '../cs336_assn1/cs336_basics')
+sys.path.insert(0, '../../cs336_assn1/cs336_basics')
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
 from Others import (gelu, softmax, rms_norm, cross_entropy, 
                     learning_rate_schedule, gradient_clipping, 
@@ -634,7 +634,7 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    input_path = '/data/TinyStoriesV2-GPT4-train.txt'
+    #input_path = '/data/TinyStoriesV2-GPT4-train.txt'
     BPE_Tokenizer_inst =  bpe_train(input_path, vocab_size, special_tokens)
     return (BPE_Tokenizer_inst.vocab, BPE_Tokenizer_inst.merges)
     
