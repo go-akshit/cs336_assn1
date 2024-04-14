@@ -6,5 +6,5 @@ input_path = '/data/TinyStoriesV2-GPT4-train.txt'
 vocab_size = 10000
 special_tokens=["<|endoftext|>"]
 bpe_train(input_path, vocab_size, special_tokens)
-with open('output.txt', 'w') as out:
-    out.write('hello bpe done\n')
+with open('bpe_done', 'w') as out:
+    out.write(' ')
