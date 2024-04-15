@@ -5,7 +5,7 @@ import argparse
 import os
 
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
-from Others import data_loading, load_checkpoint, save_checkpoint,, cross_entropy
+from Others import data_loading, load_checkpoint, save_checkpoint, cross_entropy
 from Transformer import transformer_lm
 from Adam import adam
 
@@ -126,7 +126,7 @@ def get_args():
     parser.add_argument("--iters", type=int, default=10, help="Number of epochs for training the model")
     parser.add_argument("--load_checkpoint_path", type=str, default='', help="Path to load checkpoint")
     parser.add_argument("--validation_interval", type=int, default=3, help="number of iterations before validation loss is calculated for the model")
-    parser.add_argument("experiment_name", type=str, required=True, help="Name of the experiment")
+    parser.add_argument("--experiment_name", type=str, required=True, help="Name of the experiment")
 
     return parser.parse_args()
 
