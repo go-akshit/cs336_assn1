@@ -3,9 +3,9 @@ import torch.nn as nn
 import numpy as np
 import argparse
 import os
-
+import wandb
 from BPE_Tokenizer import bpe_train, BPE_Tokenizer, Tokenizer
-from Others import data_loading, load_checkpoint, save_checkpoint, cross_entropy
+from Others import data_loading, load_checkpoint, save_checkpoint, cross_entropy, softmax
 from Transformer import transformer_lm
 from Adam import adam
 
@@ -74,11 +74,16 @@ class trainer():
         iteration = 0
         if(args.load_checkpoint_path != ''):
             iteration = load_checkpoint(args.load_checkpoint_path, model, optimizer)
+        
+        wandb.init(project="cs336_assn1", name=args.experiment_name, config=args)
+
+
         for i in range(iteration, args.iters):
             optimizer.zero_grad()
             input, targets = data_loading(tokenized_train_data, args.batch_size, args.context_length, args.device)
             predictions = model(input)
             loss = cross_entropy(predictions, targets)
+            wandb.log({"Training Loss": loss.item(), "Iteration": i})
             print(f'Iteration: {i}, Training Loss: {loss.item()}')
             loss.backward()
             optimizer.step()
@@ -87,6 +92,7 @@ class trainer():
                     input_val, targets_val = data_loading(tokenized_val_data, args.batch_size, args.context_length, args.device)
                     predictions_val = model(input_val)
                     val_loss = cross_entropy(predictions_val, targets_val)
+                    wandb.log({"Validation Loss": val_loss.item(),"Training_loss": loss.item() ,"Iteration": i})
                     print(f'Iteration: {i}, Training Loss: {loss.item()}, Validation Loss: {val_loss.item()}')
                     save_checkpoint(model, optimizer, i, f'./{dir_name}/checkpoint_{i}.pt')
         
@@ -96,6 +102,31 @@ class trainer():
             val_loss = cross_entropy(predictions_val, targets_val)
             print(f'Iteration: {args.iters}, Training Loss: {loss.item()}, Validation Loss: {val_loss.item()}')
             save_checkpoint(model, optimizer, args.iters, f'./{dir_name}/checkpoint_{args.iters}.pt')
+            wandb.log({"Validation Loss": val_loss.item(),"Training_loss": loss.item() ,"Iteration": args.iters})
+        
+        wandb.finish()
+    
+    def decoder(self, model, prompt, temp, max_length, top_p=None):
+        for _ in range(max_length):
+            prompt_ids = self.tokenizer.encode(prompt)
+            prompt_ids = torch.tensor(prompt_ids, dtype=torch.long).unsqueeze(0).to(self.device)
+            logits = model(prompt_ids)
+            logits = logits[:, -1, :] / temperature
+            probs = softmax(logits, dim=-1)
+
+            if top_p is not None:
+                sorted_probs, indices = torch.sort(probs, descending=True)
+                cumulative = torch.cumsum(sorted_probs, dim=-1)
+                mask = cumulative < top_p            
+                sorted_probs[~mask] = 0
+                softmax_dist = sorted_probs / sorted_probs.sum(dim=-1, keepdim=True)
+                idx_next = torch.multinomial(softmax_dist, num_samples=1)
+                # append sampled index to the running sequence and continue
+                prompt_ids = torch.cat((prompt_ids, idx_next), dim=1)
+
+            return prompt_ids
+
+        
         
 
 def get_args():
